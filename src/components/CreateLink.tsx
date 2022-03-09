@@ -1,12 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useMutation } from "@apollo/client";
-import { CREATE_LINK_MUTATION } from "src/queries";
+import { FEED_QUERY, CREATE_LINK_MUTATION } from "src/queries";
+import { useNavigate } from "react-router-dom";
 
 const CreateLink = () => {
   const [formState, setFormState] = useState({
     url: "",
     description: "",
   });
+
+  const navigate = useNavigate();
 
   const { url, description } = formState;
 
@@ -15,6 +18,22 @@ const CreateLink = () => {
       url,
       description,
     },
+    update: (cache, { data: { post } }) => {
+      const data = cache.readQuery({
+        query: FEED_QUERY,
+      });
+
+      cache.writeQuery({
+        query: FEED_QUERY,
+        data: {
+          feed: {
+            // @ts-ignore
+            links: [post, ...data.feed.links],
+          },
+        },
+      });
+    },
+    onCompleted: () => navigate("/"),
   });
 
   return (
@@ -23,6 +42,7 @@ const CreateLink = () => {
         onSubmit={(e) => {
           e.preventDefault();
           createLink();
+          navigate("/");
         }}
       >
         <div className="flex flex-column mt3">
